@@ -1,15 +1,16 @@
-FROM stackbrew/ubuntu:saucy
-MAINTAINER Marcel de Graaf <mail@marceldegraaf.net>
+FROM dockerfile/ubuntu
+MAINTAINER Ericson Cepeda <ericson@twnel.com>
 
 # Install Nginx
-RUN apt-get install -y --force-yes software-properties-common
+RUN apt-get install -y software-properties-common
 RUN add-apt-repository ppa:nginx/stable
 RUN apt-get update
-RUN apt-get install -y --force-yes nginx curl
+RUN apt-get install -y nginx curl
 
 # Install confd
-RUN curl -L https://github.com/kelseyhightower/confd/releases/download/v0.3.0/confd_0.3.0_linux_amd64.tar.gz | tar xz
+RUN curl -L https://github.com/kelseyhightower/confd/releases/download/v0.7.1/confd-0.7.1-linux-amd64 -o confd
 RUN mv confd /usr/local/bin/confd
+RUN chmod +x /usr/local/bin/confd
 
 # Create directories
 RUN mkdir -p /etc/confd/conf.d
@@ -20,7 +21,7 @@ ADD ./nginx.conf.tmpl /etc/confd/templates/nginx.conf.tmpl
 ADD ./nginx.toml /etc/confd/conf.d/nginx.toml
 
 # Remove default site
-RUN rm -f /etc/nginx/sites-enabled/default
+# RUN rm -f /etc/nginx/sites-enabled/default
 
 # Add boot script
 ADD ./boot.sh /opt/boot.sh

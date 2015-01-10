@@ -1,14 +1,17 @@
-upstream app {
-  {{ range $server := .app_server }}
-  server {{ $server.Value }};
-  {{ end }}
+{{ range $upstream := lsdir "/services" }}
+upstream {{ base $upstream }} {
+    {{$server := printf "/services/%s/*" $upstream}}{{range gets $server}}
+    server {{ .Value }};
+    {{end}}
 }
+{{ end }}
 
 server {
-  server_name _;
+  listen 80;
+  server_name ~^(?P<app_domain>.+)\.core\.twnel\.com;
 
   location / {
-    proxy_pass http://app;
+    proxy_pass http://$app_domain;
     proxy_redirect off;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
