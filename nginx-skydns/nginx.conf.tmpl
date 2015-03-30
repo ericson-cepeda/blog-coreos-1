@@ -38,25 +38,25 @@ resolver_timeout 5s;
 {{ $region := (getenv "REGION") }}
 {{ $domain := (getenv "DOMAIN") }}
 
-{{ range $upstream := lsdir (printf "/skydns/local/%s/ui" $region) }}
+{{ range $upstream := lsdir "/skydns/local/ui" }}
 upstream {{ base $upstream }}.ui {
-    {{$server := (printf "/skydns/local/%s/ui/%s/*" $region $upstream)}}{{range gets $server}}
+    {{$server := (printf "/skydns/local/ui/%s/*" $upstream)}}{{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
     {{end}}
 }
 {{ end }}
 
-{{ range $upstream := lsdir (printf "/skydns/local/%s/ssl" $region) }}
+{{ range $upstream := lsdir "/skydns/local/ssl" }}
 upstream {{ base $upstream }}.ssl {
-    {{$server := (printf "/skydns/local/%s/ssl/%s/*" $region $upstream)}}{{range gets $server}}
+    {{$server := (printf "/skydns/local/ssl/%s/*" $upstream)}}{{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
     {{end}}
 }
 {{ end }}
 
-{{ range $upstream := lsdir (printf "/skydns/local/%s/pwd" $region) }}
+{{ range $upstream := lsdir "/skydns/local/pwd" }}
 upstream {{ base $upstream }}.pwd {
-    {{$server := (printf "/skydns/local/%s/pwd/%s/*" $region $upstream)}}{{range gets $server}}
+    {{$server := (printf "/skydns/local/pwd/%s/*" $upstream)}}{{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
     {{end}}
 }
@@ -67,7 +67,7 @@ server {
     server_name ~^(?<app_domain>[^\.]+?)(\.{{$region}})?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
-    # set $dns $app_domain.ui.{{$region}}.local;
+    # set $dns $app_domain.ui.local;
 
     location / {
         proxy_pass http://$app_domain.ui;
@@ -105,7 +105,7 @@ server {
     server_name ~^(?<app_domain>[^\.]+?)\.pwd(\.{{$region}})?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
-    # set $dns $app_domain.pwd.{{$region}}.local;
+    # set $dns $app_domain.pwd.local;
 
     location / {
         proxy_pass http://$app_domain.pwd;
@@ -120,7 +120,7 @@ server {
     server_name ~^(?<app_domain>[^\.]+?)(\.{{$region}})?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
-    # set $dns $app_domain.ssl.{{$region}}.local;
+    # set $dns $app_domain.ssl.local;
 
     location / {
         proxy_pass http://$app_domain.ssl;
