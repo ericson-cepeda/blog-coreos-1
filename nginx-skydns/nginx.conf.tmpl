@@ -44,10 +44,22 @@ upstream {{ base $upstream }}.ui {
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
     {{end}}
 }
+upstream {{ base $upstream }}.sticky.ui {
+    ip_hash;
+    {{$server := (printf "/skydns/local/ui/%s/*" $upstream)}}{{range gets $server}}
+    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{end}}
+}
 {{ end }}
 
 {{ range $upstream := lsdir "/skydns/local/ssl" }}
 upstream {{ base $upstream }}.ssl {
+    {{$server := (printf "/skydns/local/ssl/%s/*" $upstream)}}{{range gets $server}}
+    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{end}}
+}
+upstream {{ base $upstream }}.sticky.ssl {
+    ip_hash;
     {{$server := (printf "/skydns/local/ssl/%s/*" $upstream)}}{{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
     {{end}}
@@ -60,17 +72,23 @@ upstream {{ base $upstream }}.pwd {
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
     {{end}}
 }
+upstream {{ base $upstream }}.sticky.pwd {
+    ip_hash;
+    {{$server := (printf "/skydns/local/pwd/%s/*" $upstream)}}{{range gets $server}}
+    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{end}}
+}
 {{ end }}
 
 server {
     listen 80;
-    server_name ~^(?<app_domain>[^\.]+?)(\.{{$region}})?\.{{$domain}}$;
+    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}})?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ui.local;
 
     location / {
-        proxy_pass http://$app_domain.ui;
+        proxy_pass http://$app_domain$app_sticky.ui;
         proxy_redirect off;
     }
 }
@@ -102,13 +120,13 @@ server {
 
 server {
     listen 443;
-    server_name ~^(?<app_domain>[^\.]+?)\.pwd(\.{{$region}})?\.{{$domain}}$;
+    server_name ~^(?<app_domain>[^\.]+?)\.pwd(?<app_sticky>\.sticky)?(\.{{$region}})?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.pwd.local;
 
     location / {
-        proxy_pass http://$app_domain.pwd;
+        proxy_pass http://$app_domain$app_sticky.pwd;
         proxy_redirect off;
 		auth_basic "Restricted $app_domain";
 		auth_basic_user_file "/etc/nginx/.htpasswd";
@@ -117,13 +135,13 @@ server {
 
 server {
     listen 443;
-    server_name ~^(?<app_domain>[^\.]+?)(\.{{$region}})?\.{{$domain}}$;
+    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}})?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ssl.local;
 
     location / {
-        proxy_pass http://$app_domain.ssl;
+        proxy_pass http://$app_domain$app_sticky.ssl;
         proxy_redirect off;
     }
 }
