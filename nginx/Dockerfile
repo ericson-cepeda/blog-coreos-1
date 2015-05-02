@@ -1,4 +1,4 @@
-FROM dockerfile/ubuntu
+FROM phusion/baseimage:latest
 MAINTAINER Ericson Cepeda <ericson@picorb.com>
 
 # Install Nginx
