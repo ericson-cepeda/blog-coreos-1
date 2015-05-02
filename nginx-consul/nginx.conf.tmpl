@@ -32,53 +32,41 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
 
 # Nginx to use SkyDNS
-resolver {{getenv "HOST_IP"}} valid=5s;
+resolver {{env "HOST_IP"}} valid=5s;
 resolver_timeout 5s;
 
-{{ $region := (getenv "REGION") }}
-{{ $domain := (getenv "DOMAIN") }}
+{{ $region := (env "REGION") }}
+{{ $domain := (env "DOMAIN") }}
 
-{{ range $upstream := lsdir "/skydns/local/ui" }}
-upstream {{ base $upstream }}.ui {
-    {{$server := (printf "/skydns/local/ui/%s/*" $upstream)}}{{range gets $server}}
-    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
-}
-upstream {{ base $upstream }}.sticky.ui {
-    ip_hash;
-    {{$server := (printf "/skydns/local/ui/%s/*" $upstream)}}{{range gets $server}}
-    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
-}
+{{ range $tag, $services := service "ui" | byTag }}
+upstream {{ $tag }}.ui {
+{{range $service := $services}} server {{$service.Address}}:{{$service.Port}}
 {{ end }}
+upstream {{ $tag }}.sticky.ui {
+ip_hash;
+{{range $service := $services}} server {{$service.Address}}:{{$service.Port}}
+{{ end }}
+}{{ end }}
 
-{{ range $upstream := lsdir "/skydns/local/ssl" }}
-upstream {{ base $upstream }}.ssl {
-    {{$server := (printf "/skydns/local/ssl/%s/*" $upstream)}}{{range gets $server}}
-    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
-}
-upstream {{ base $upstream }}.sticky.ssl {
-    ip_hash;
-    {{$server := (printf "/skydns/local/ssl/%s/*" $upstream)}}{{range gets $server}}
-    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
-}
+{{ range $tag, $services := service "pwd" | byTag }}
+upstream {{ $tag }}.pwd {
+{{range $service := $services}} server {{$service.Address}}:{{$service.Port}}
 {{ end }}
+upstream {{ $tag }}.sticky.pwd {
+ip_hash;
+{{range $service := $services}} server {{$service.Address}}:{{$service.Port}}
+{{ end }}
+}{{ end }}
 
-{{ range $upstream := lsdir "/skydns/local/pwd" }}
-upstream {{ base $upstream }}.pwd {
-    {{$server := (printf "/skydns/local/pwd/%s/*" $upstream)}}{{range gets $server}}
-    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
-}
-upstream {{ base $upstream }}.sticky.pwd {
-    ip_hash;
-    {{$server := (printf "/skydns/local/pwd/%s/*" $upstream)}}{{range gets $server}}
-    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
-}
+{{ range $tag, $services := service "ssl" | byTag }}
+upstream {{ $tag }}.ssl {
+{{range $service := $services}} server {{$service.Address}}:{{$service.Port}}
 {{ end }}
+upstream {{ $tag }}.sticky.ssl {
+ip_hash;
+{{range $service := $services}} server {{$service.Address}}:{{$service.Port}}
+{{ end }}
+}{{ end }}
 
 server {
     listen 80;
