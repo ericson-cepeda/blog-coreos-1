@@ -82,18 +82,18 @@ upstream {{ base $upstream }}.sticky.pwd {
 
 server {
     listen 80;
-    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}})?\.{{$domain}}$;
+    listen [::]:80;
+    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}})?(?<services>\.services)?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ui.local;
 
-    location ~ (\/(?<app>[^/]+?)\/|\/) {
-        if ($app_domain ~ "services") {
-            proxy_pass http://$app$app_sticky.ui;
+    location ~ (/(?<app>[^/]+?)/|/) {
+        set $api $app_domain;
+        if ($services ~ ".services") {
+            set $api $app;
         }
-        if ($app_domain !~ "services") {
-            proxy_pass http://$app_domain$app_sticky.ui;
-        }
+        proxy_pass http://$api$app_sticky.ui;
         proxy_redirect off;
     }
 }
@@ -106,7 +106,7 @@ server {
     set $dns $app_domain.local;
 
     location / {
-        proxy_pass http://$app_domain;
+        proxy_pass http://$dns;
         proxy_redirect off;
     }
 }
