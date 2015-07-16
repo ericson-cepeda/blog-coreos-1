@@ -3,7 +3,9 @@ MAINTAINER Ericson Cepeda <ericson@picorb.com>
 
 # Install Nginx
 RUN apt-get install -y software-properties-common
-RUN add-apt-repository ppa:nginx/stable
+#RUN add-apt-repository ppa:nginx/stable
+RUN add-apt-repository "deb http://ppa.launchpad.net/chris-lea/nginx-devel/ubuntu trusty main" && \
+    add-apt-repository "deb-src http://ppa.launchpad.net/chris-lea/nginx-devel/ubuntu trusty main"
 RUN apt-get update
 RUN apt-get install -y nginx curl
 
