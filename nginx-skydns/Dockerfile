@@ -4,8 +4,12 @@ MAINTAINER Ericson Cepeda <ericson@picorb.com>
 # Install Nginx
 RUN apt-get install -y software-properties-common
 #RUN add-apt-repository ppa:nginx/stable
-RUN add-apt-repository "deb http://ppa.launchpad.net/chris-lea/nginx-devel/ubuntu trusty main" && \
-    add-apt-repository "deb-src http://ppa.launchpad.net/chris-lea/nginx-devel/ubuntu trusty main"
+#RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B9316A7BC7917B12 && \ 
+#    add-apt-repository "deb http://ppa.launchpad.net/chris-lea/nginx-devel/ubuntu trusty main" && \
+#    add-apt-repository -s "deb http://ppa.launchpad.net/chris-lea/nginx-devel/ubuntu trusty main"
+RUN  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ABF5BD827BD9BF62 && \
+     add-apt-repository "deb http://nginx.org/packages/mainline/ubuntu/ trusty nginx" && \
+     add-apt-repository -s "deb http://nginx.org/packages/mainline/ubuntu/ trusty nginx"
 RUN apt-get update
 RUN apt-get install -y nginx curl
 
