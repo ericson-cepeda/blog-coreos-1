@@ -23,8 +23,9 @@ RUN mkdir -p /etc/confd/conf.d
 RUN mkdir -p /etc/confd/templates
 
 # Add confd files
-ADD ./nginx.conf.tmpl /etc/confd/templates/nginx.conf.tmpl
-ADD ./nginx.toml /etc/confd/conf.d/nginx.toml
+ADD *.tmpl /etc/confd/templates/
+ADD *.toml /etc/confd/conf.d/
+ADD nginx.conf /etc/nginx/
 
 # Remove default site
 # RUN rm -f /etc/nginx/sites-enabled/default
