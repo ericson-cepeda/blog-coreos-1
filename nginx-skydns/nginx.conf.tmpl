@@ -100,13 +100,13 @@ server {
 
 server {
     listen 8080;
-    server_name ~^(?<app_domain>.+?)\.local$;
+    server_name ~^(?<app_domain>.+?)_(?<app_port>.+?)\.local$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     set $dns $app_domain.local;
 
     location / {
-        proxy_pass http://$dns;
+        proxy_pass $dns:$app_port;
         proxy_redirect off;
     }
 }
