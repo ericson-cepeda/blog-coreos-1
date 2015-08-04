@@ -7,7 +7,7 @@ upstream {{ base $upstream }}.tcp {
 }
 # {{ printf "/skydns/local/port/%s" (base $upstream) }}
 server {
-    listen *:{{ getv (printf "/skydns/local/port/%s" (base $upstream)) }};
+    listen *:{{ getv (printf "/skydns/local/stream/port/%s" (base $upstream)) }};
 
     proxy_pass {{ base $upstream }}.tcp;
 }
