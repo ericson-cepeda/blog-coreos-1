@@ -126,12 +126,18 @@ server {
     ssl_session_timeout 7m;
     ssl_session_cache shared:SSL:32m;
     ssl_buffer_size 8k;
+    
+    if (!-f ~* "^/etc/nginx/certs/trusted.crt")
+    {
+        ssl_certificate /etc/nginx/certs/default.crt;
+        ssl_certificate_key /etc/nginx/certs/default.key;
+    }
 
-    ssl_certificate /etc/nginx/certs/default.crt;
-    ssl_certificate_key /etc/nginx/certs/default.key;
-
-    # Should be trusted certificate from issuing authority
-    # ssl_trusted_certificate /etc/nginx/certs/default.crt;
+    if (-f ~* "^/etc/nginx/certs/trusted.crt")
+    {
+        # Should be trusted certificate from issuing authority
+        ssl_trusted_certificate /etc/nginx/certs/trusted.crt;
+    }
 
     add_header Strict-Transport-Security "max-age=31536000";
 }
