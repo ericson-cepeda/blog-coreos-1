@@ -37,6 +37,7 @@ resolver_timeout 5s;
 
 {{ $region := (getenv "REGION") }}
 {{ $domain := (getenv "DOMAIN") }}
+{{ $trusted := (getenv "TRUSTED") }}
 
 {{ range $upstream := lsdir "/skydns/local/ui" }}
 upstream {{ base $upstream }}.ui {
@@ -127,17 +128,14 @@ server {
     ssl_session_cache shared:SSL:32m;
     ssl_buffer_size 8k;
     
-    if (!-f ~* "^/etc/nginx/certs/trusted.crt")
-    {
-        ssl_certificate /etc/nginx/certs/default.crt;
-        ssl_certificate_key /etc/nginx/certs/default.key;
-    }
-
-    if (-f ~* "^/etc/nginx/certs/trusted.crt")
-    {
-        # Should be trusted certificate from issuing authority
-        ssl_trusted_certificate /etc/nginx/certs/trusted.crt;
-    }
+    
+    {{if eq $trusted "1"}}
+    # Should be trusted certificate from issuing authority
+    ssl_trusted_certificate /etc/nginx/certs/trusted.crt;
+    {{else}}
+    ssl_certificate /etc/nginx/certs/default.crt;
+    ssl_certificate_key /etc/nginx/certs/default.key;
+    {{end}}
 
     add_header Strict-Transport-Security "max-age=31536000";
 }
