@@ -14,7 +14,7 @@ RUN apt-get update
 RUN apt-get install -y nginx curl
 
 # Install confd
-RUN curl -L https://github.com/kelseyhightower/confd/releases/download/v0.7.1/confd-0.7.1-linux-amd64 -o confd
+RUN curl -L https://github.com/kelseyhightower/confd/releases/download/v0.10.0/confd-0.10.0-linux-amd64 -o confd
 RUN mv confd /usr/local/bin/confd
 RUN chmod +x /usr/local/bin/confd
 
