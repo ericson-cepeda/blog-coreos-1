@@ -38,13 +38,13 @@ openssl req -subj "$(echo -n "$SUBJ" | tr "\n" "/")" -x509 -nodes -days 365 -new
 echo "[nginx] booting container. ETCD: $ETCD"
 
 # Loop until confd has updated the nginx config
-until confd -onetime -verbose -node $ETCD; do
+until confd -onetime -node $ETCD; do
   echo "[nginx] waiting for confd to refresh nginx.conf"
   sleep 5
 done
 
 # Run confd in the background to watch the upstream servers
-confd -verbose -interval 10 -node $ETCD &
+confd -interval 10 -node $ETCD &
 echo "[nginx] confd is listening for changes on etcd..."
 
 # Start nginx
