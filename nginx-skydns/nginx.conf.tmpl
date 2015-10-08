@@ -119,7 +119,7 @@ server {
         }
     }
     
-    location ~ (/(?<app>[^/]+?)/|/) {
+    location ~ /(?<app>([^/]+|.*?$))/? {
         if ($http_origin ~ "^https?://(.*?\.{{$domain}})$") {
             set $origin_domain $http_origin;
         }
