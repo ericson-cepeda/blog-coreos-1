@@ -42,37 +42,48 @@ resolver_timeout 5s;
 
 {{ range $upstream := lsdir (printf "/skydns/local/%s/ui" $cluster) }}
 {{$server := (printf "/skydns/local/%s/ui/%s/*" $cluster $upstream)}}
-{{range gets $server}}
 upstream {{ base $upstream }}.ui {
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{ end }}
 }
 upstream {{ base $upstream }}.sticky.ui {
     ip_hash;
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{ end }}
 }
-{{end}}{{ end }}
+{{end}}
 
 {{ range $upstream := lsdir (printf "/skydns/%s/local/ssl" $cluster) }}
-{{$server := (printf "/skydns/local/%s/ssl/%s/*" $cluster $upstream)}}{{range gets $server}}
+{{$server := (printf "/skydns/local/%s/ssl/%s/*" $cluster $upstream)}}
 upstream {{ base $upstream }}.ssl {
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{ end }}
 }
 upstream {{ base $upstream }}.sticky.ssl {
     ip_hash;
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{ end }}
 }
-{{ end }}{{ end }}
+{{ end }}
 
 {{ range $upstream := lsdir (printf "/skydns/local/%s/pwd" $cluster) }}
-{{$server := (printf "/skydns/local/%s/pwd/%s/*" $cluster $upstream)}}{{range gets $server}}
+{{$server := (printf "/skydns/local/%s/pwd/%s/*" $cluster $upstream)}}
 upstream {{ base $upstream }}.pwd {
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{ end }}
 }
 upstream {{ base $upstream }}.sticky.pwd {
     ip_hash;
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{ end }}
 }
-{{ end }}{{ end }}
+{{ end }}
 
 server {
     listen 80;
