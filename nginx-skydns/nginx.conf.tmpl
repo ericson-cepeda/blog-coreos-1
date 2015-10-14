@@ -48,7 +48,7 @@ upstream {{ base $upstream }}.ui {
 }
 upstream {{ base $upstream }}.sticky.ui {
     ip_hash;
-    {{$server := (printf "/skydns/local/$cluster/ui/%s/*" $cluster $upstream)}}{{range gets $server}}
+    {{$server := (printf "/skydns/local/%s/ui/%s/*" $cluster $upstream)}}{{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
     {{end}}
 }
