@@ -200,7 +200,7 @@ server {
 
 server {
     listen 443;
-    server_name ~^(?<app_domain>[^\.]+?)\.pwd(?<app_sticky>\.sticky)?(\.{{$region}}\.{{$cluster}})?\.{{$domain}}$;
+    server_name ~^(?<app_domain>[^\.]+?)\.pwd\.{{$region}}\.{{$cluster}}\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.pwd.local;
