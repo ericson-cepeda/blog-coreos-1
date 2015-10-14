@@ -88,7 +88,7 @@ upstream {{ base $upstream }}.sticky.pwd {
 server {
     listen 80;
     listen [::]:80;
-    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}})?(?<services>\.services)?\.{{$domain}}$;
+    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}}\.{{$cluster}})?(?<services>\.services)?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ui.local;
@@ -200,7 +200,7 @@ server {
 
 server {
     listen 443;
-    server_name ~^(?<app_domain>[^\.]+?)\.pwd(?<app_sticky>\.sticky)?(\.{{$region}})?\.{{$domain}}$;
+    server_name ~^(?<app_domain>[^\.]+?)\.pwd(?<app_sticky>\.sticky)?(\.{{$region}}\.{{$cluster}})?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.pwd.local;
@@ -215,7 +215,7 @@ server {
 
 server {
     listen 443;
-    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}})?\.{{$domain}}$;
+    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}}\.{{$cluster}})?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ssl.local;
