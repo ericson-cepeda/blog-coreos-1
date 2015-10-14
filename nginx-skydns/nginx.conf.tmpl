@@ -88,7 +88,7 @@ upstream {{ base $upstream }}.sticky.pwd {
 server {
     listen 80;
     listen [::]:80;
-    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}}\.{{$cluster}})?(?<services>\.services)?\.{{$domain}}$;
+    server_name ~^{{$region}}\.{{$cluster}}(?<app_sticky>\.sticky)?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ui.local;
@@ -148,10 +148,10 @@ server {
            return 204;
         }
 
-        set $api $app_domain;
-        if ($services ~ ".services") {
-            set $api $app;
-        }
+        #set $api $app_domain;
+        #if ($services ~ ".services") {
+        set $api $app;
+        #}
         proxy_pass http://$api$app_sticky.ui;
         proxy_redirect off;
     }
@@ -171,7 +171,7 @@ server {
 }
 
 server {
-    listen              443 default_server deferred ssl spdy;
+    listen              443 default_server deferred ssl; # spdy;
     server_name         _;
     return 503;
 
