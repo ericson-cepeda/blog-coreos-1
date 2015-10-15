@@ -88,7 +88,7 @@ upstream {{ base $upstream }}.sticky.pwd {
 server {
     listen 80;
     listen [::]:80;
-    server_name ~^{{$region}}\.{{$cluster}}(?<app_sticky>\.sticky)?\.{{$domain}}$;
+    server_name ~^((?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)\.)?{{$region}}\.{{$cluster}}\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ui.local;
