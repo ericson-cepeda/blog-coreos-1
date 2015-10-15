@@ -148,10 +148,10 @@ server {
            return 204;
         }
 
-        #set $api $app_domain;
-        #if ($services ~ ".services") {
         set $api $app;
-        #}
+        if ($app_domain ~ ".+") {
+           set $api $app_domain;
+        }
         proxy_pass http://$api$app_sticky.ui;
         proxy_redirect off;
     }
