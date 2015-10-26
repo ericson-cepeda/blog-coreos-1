@@ -37,54 +37,58 @@ resolver_timeout 5s;
 
 {{ $region := (getenv "REGION") }}
 {{ $domain := (getenv "DOMAIN") }}
+{{ $cluster := (getenv "CLUSTER") }}
 {{ $trusted := (getenv "TRUSTED") }}
 
-{{ range $upstream := lsdir "/skydns/local/ui" }}
+{{ range $upstream := lsdir (printf "/skydns/local/%s/ui" $cluster) }}
+{{$server := (printf "/skydns/local/%s/ui/%s/*" $cluster $upstream)}}
 upstream {{ base $upstream }}.ui {
-    {{$server := (printf "/skydns/local/ui/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
 upstream {{ base $upstream }}.sticky.ui {
     ip_hash;
-    {{$server := (printf "/skydns/local/ui/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
-{{ end }}
+{{end}}
 
-{{ range $upstream := lsdir "/skydns/local/ssl" }}
+{{ range $upstream := lsdir (printf "/skydns/%s/local/ssl" $cluster) }}
+{{$server := (printf "/skydns/local/%s/ssl/%s/*" $cluster $upstream)}}
 upstream {{ base $upstream }}.ssl {
-    {{$server := (printf "/skydns/local/ssl/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
 upstream {{ base $upstream }}.sticky.ssl {
     ip_hash;
-    {{$server := (printf "/skydns/local/ssl/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
 {{ end }}
 
-{{ range $upstream := lsdir "/skydns/local/pwd" }}
+{{ range $upstream := lsdir (printf "/skydns/local/%s/pwd" $cluster) }}
+{{$server := (printf "/skydns/local/%s/pwd/%s/*" $cluster $upstream)}}
 upstream {{ base $upstream }}.pwd {
-    {{$server := (printf "/skydns/local/pwd/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
 upstream {{ base $upstream }}.sticky.pwd {
     ip_hash;
-    {{$server := (printf "/skydns/local/pwd/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
 {{ end }}
 
 server {
     listen 80;
     listen [::]:80;
-    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}})?(?<services>\.services)?\.{{$domain}}$;
+    server_name ~^((?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?\.)?{{$region}}\.{{$cluster}}\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ui.local;
@@ -118,7 +122,7 @@ server {
            return 204;
         }
     }
-    
+
     location ~ /(?<app>([^/]+|.*?$))/? {
         if ($http_origin ~ "^https?://(.*?\.{{$domain}})$") {
             set $origin_domain $http_origin;
@@ -143,10 +147,10 @@ server {
            add_header 'Content-Length' 0;
            return 204;
         }
-    
-        set $api $app_domain;
-        if ($services ~ ".services") {
-            set $api $app;
+
+        set $api $app;
+        if ($app_domain ~ ".+") {
+           set $api $app_domain;
         }
         proxy_pass http://$api$app_sticky.ui;
         proxy_redirect off;
@@ -154,11 +158,11 @@ server {
 }
 
 server {
-    listen 8080;
+    listen 8888;
     server_name ~^(?<app_domain>.+?)_(?<app_port>.+?)\.local$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
-    set $dns $app_domain.local;
+    set $dns $app_domain.ui.{{ $cluster }}.local;
 
     location / {
         proxy_pass $dns:$app_port;
@@ -167,7 +171,7 @@ server {
 }
 
 server {
-    listen              443 default_server deferred ssl spdy;
+    listen              443 default_server deferred ssl; # spdy;
     server_name         _;
     return 503;
 
@@ -181,8 +185,8 @@ server {
     ssl_session_timeout 7m;
     ssl_session_cache shared:SSL:32m;
     ssl_buffer_size 8k;
-    
-    
+
+
     {{if (exists "/certs/trusted.crt")}}
     # Should be trusted certificate from issuing authority
     ssl_trusted_certificate /etc/nginx/certs/trusted.crt;
@@ -196,7 +200,7 @@ server {
 
 server {
     listen 443;
-    server_name ~^(?<app_domain>[^\.]+?)\.pwd(?<app_sticky>\.sticky)?(\.{{$region}})?\.{{$domain}}$;
+    server_name ~^(?<app_domain>[^\.]+?)\.pwd\.{{$region}}\.{{$cluster}}\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.pwd.local;
@@ -211,7 +215,7 @@ server {
 
 server {
     listen 443;
-    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}})?\.{{$domain}}$;
+    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}}\.{{$cluster}})?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ssl.local;
