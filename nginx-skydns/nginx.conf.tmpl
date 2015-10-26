@@ -37,61 +37,120 @@ resolver_timeout 5s;
 
 {{ $region := (getenv "REGION") }}
 {{ $domain := (getenv "DOMAIN") }}
+{{ $cluster := (getenv "CLUSTER") }}
+{{ $trusted := (getenv "TRUSTED") }}
 
-{{ range $upstream := lsdir "/skydns/local/ui" }}
+{{ range $upstream := lsdir (printf "/skydns/local/%s/ui" $cluster) }}
+{{$server := (printf "/skydns/local/%s/ui/%s/*" $cluster $upstream)}}
 upstream {{ base $upstream }}.ui {
-    {{$server := (printf "/skydns/local/ui/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
 upstream {{ base $upstream }}.sticky.ui {
     ip_hash;
-    {{$server := (printf "/skydns/local/ui/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
-{{ end }}
+{{end}}
 
-{{ range $upstream := lsdir "/skydns/local/ssl" }}
+{{ range $upstream := lsdir (printf "/skydns/%s/local/ssl" $cluster) }}
+{{$server := (printf "/skydns/local/%s/ssl/%s/*" $cluster $upstream)}}
 upstream {{ base $upstream }}.ssl {
-    {{$server := (printf "/skydns/local/ssl/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
 upstream {{ base $upstream }}.sticky.ssl {
     ip_hash;
-    {{$server := (printf "/skydns/local/ssl/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
 {{ end }}
 
-{{ range $upstream := lsdir "/skydns/local/pwd" }}
+{{ range $upstream := lsdir (printf "/skydns/local/%s/pwd" $cluster) }}
+{{$server := (printf "/skydns/local/%s/pwd/%s/*" $cluster $upstream)}}
 upstream {{ base $upstream }}.pwd {
-    {{$server := (printf "/skydns/local/pwd/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
 upstream {{ base $upstream }}.sticky.pwd {
     ip_hash;
-    {{$server := (printf "/skydns/local/pwd/%s/*" $upstream)}}{{range gets $server}}
+    {{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
-    {{end}}
+    {{ end }}
 }
 {{ end }}
 
 server {
     listen 80;
     listen [::]:80;
-    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}})?(?<services>\.services)?\.{{$domain}}$;
+    server_name ~^((?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?\.)?{{$region}}\.{{$cluster}}\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ui.local;
 
-    location ~ (/(?<app>[^/]+?)/|/) {
-        set $api $app_domain;
-        if ($services ~ ".services") {
-            set $api $app;
+    #
+    # Wide-open CORS config for nginx
+    #
+    set $origin_domain {{$domain}};
+    location / {
+        if ($http_origin ~ "^https?://(.*?\.{{$domain}})$") {
+            set $origin_domain $http_origin;
+        }
+
+        if ($request_method = 'OPTIONS') {
+           add_header 'Access-Control-Allow-Origin' $origin_domain;
+           #
+           # Om nom nom cookies
+           #
+           add_header 'Access-Control-Allow-Credentials' 'true';
+           add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
+           #
+           # Custom headers and headers various browsers *should* be OK with but aren't
+           #
+           add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
+           #
+           # Tell client that this pre-flight info is valid for 20 days
+           #
+           add_header 'Access-Control-Max-Age' 1728000;
+           add_header 'Content-Type' 'text/plain charset=UTF-8';
+           add_header 'Content-Length' 0;
+           return 204;
+        }
+    }
+
+    location ~ /(?<app>([^/]+|.*?$))/? {
+        if ($http_origin ~ "^https?://(.*?\.{{$domain}})$") {
+            set $origin_domain $http_origin;
+        }
+
+        if ($request_method = 'OPTIONS') {
+           add_header 'Access-Control-Allow-Origin' $origin_domain;
+           #
+           # Om nom nom cookies
+           #
+           add_header 'Access-Control-Allow-Credentials' 'true';
+           add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
+           #
+           # Custom headers and headers various browsers *should* be OK with but aren't
+           #
+           add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
+           #
+           # Tell client that this pre-flight info is valid for 20 days
+           #
+           add_header 'Access-Control-Max-Age' 1728000;
+           add_header 'Content-Type' 'text/plain charset=UTF-8';
+           add_header 'Content-Length' 0;
+           return 204;
+        }
+
+        set $api $app;
+        if ($app_domain ~ ".+") {
+           set $api $app_domain;
         }
         proxy_pass http://$api$app_sticky.ui;
         proxy_redirect off;
@@ -99,24 +158,24 @@ server {
 }
 
 server {
-    listen 8080;
-    server_name ~^(?<app_domain>.+?)\.local$;
+    listen 8888;
+    server_name ~^(?<app_domain>.+?)_(?<app_port>.+?)\.local$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
-    set $dns $app_domain.local;
+    set $dns $app_domain.ui.{{ $cluster }}.local;
 
     location / {
-        proxy_pass http://$dns;
+        proxy_pass $dns:$app_port;
         proxy_redirect off;
     }
 }
 
 server {
-    listen              443 default_server deferred ssl spdy;
+    listen              443 default_server deferred ssl; # spdy;
     server_name         _;
-	return 503;
+    return 503;
 
-	# SSL configuration
+    # SSL configuration
     # ssl_stapling on;
     # ssl_stapling_verify on;
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
@@ -127,18 +186,21 @@ server {
     ssl_session_cache shared:SSL:32m;
     ssl_buffer_size 8k;
 
+
+    {{if (exists "/certs/trusted.crt")}}
+    # Should be trusted certificate from issuing authority
+    ssl_trusted_certificate /etc/nginx/certs/trusted.crt;
+    {{else}}
     ssl_certificate /etc/nginx/certs/default.crt;
     ssl_certificate_key /etc/nginx/certs/default.key;
-
-    # Should be trusted certificate from issuing authority
-    # ssl_trusted_certificate /etc/nginx/certs/default.crt;
+    {{end}}
 
     add_header Strict-Transport-Security "max-age=31536000";
 }
 
 server {
     listen 443;
-    server_name ~^(?<app_domain>[^\.]+?)\.pwd(?<app_sticky>\.sticky)?(\.{{$region}})?\.{{$domain}}$;
+    server_name ~^(?<app_domain>[^\.]+?)\.pwd\.{{$region}}\.{{$cluster}}\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.pwd.local;
@@ -153,7 +215,7 @@ server {
 
 server {
     listen 443;
-    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}})?\.{{$domain}}$;
+    server_name ~^(?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?(\.{{$region}}\.{{$cluster}})?\.{{$domain}}$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ssl.local;
